@@ -72,8 +72,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 gbc = GradientBoostingClassifier(init = RandomForestClassifier(max_depth = 20),
                                  subsample = .85,
                                  n_iter_no_change = 10,
-                                 n_estimators=(500),
-                                 learning_rate=(.1),
+                                 n_estimators=(1000),
+                                 learning_rate=(.15),
                                  random_state=(23456))
 
 cvs = cross_val_score(gbc, final_train, train_labels.damage_grade, 
@@ -82,7 +82,9 @@ print(cvs)
 print("Mean F1 Micro Score: {}".format(np.mean(cvs)))
 
 # [0.72235759 0.71780507 0.72419417 0.72275518 0.72177667] # 100 estimators
-# [0.73049251 0.72722563 0.73503454 0.73227168 0.73227168] # current best sub
+# [0.73049251 0.72722563 0.73503454 0.73227168 0.73227168] # 500 estimators
+# [0.73584544 0.7289716  0.7390637  0.73762471 0.7386416 ] # current best sub
+# Mean F1 Micro Score: 0.7360294096491306
 if np.mean(cvs) > 0.7314592076266008:
    gbc.fit(final_train, train_labels.damage_grade)
    print('Model fitted')
@@ -97,4 +99,4 @@ test["damage_grade"] = gbc.predict(mtest)
 print(test.value_counts('damage_grade')) # check that preds look ok
 
 #%%
-test[['building_id', 'damage_grade']].to_csv("gbc_rf_init_500_est_lr_point1.csv", index = False)
+test[['building_id', 'damage_grade']].to_csv("gbc_rf_init_1000_est_lr_point15.csv", index = False)
