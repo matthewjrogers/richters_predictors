@@ -91,15 +91,46 @@ print("Mean F1 Micro Score: {}".format(np.mean(cvs)))
 if np.mean(cvs) > 0.7384584064476098:
    gbc.fit(final_train, train_labels.damage_grade)
    print('Model fitted')
-   
+
+#%% experiment with dataset balancing
+from imblearn.combine import SMOTETomek
+from imblearn.pipeline import Pipeline
+
+#smote = SMOTETomek(sampling_strategy = 'minority', random_state = 23456)
+#smote_train, smote_labels = smote.fit_resample(final_train, train_labels.damage_grade)
+
+gbc = GradientBoostingClassifier(init = RandomForestClassifier(max_depth = 20),
+                                 subsample = .85,
+                                 n_iter_no_change = 10,
+                                 n_estimators=(1000),
+                                 learning_rate=(.25),
+                                 random_state=(23456))
+
+pipe = Pipeline([('balance', SMOTETomek(sampling_strategy = {1 : 30000}, random_state = 23456)),
+                 ('model', gbc)
+                 ])
+
+
+cvs = cross_val_score(pipe, final_train, train_labels.damage_grade, 
+                      cv = 5, n_jobs = (-1), scoring = make_scorer(f1_score, average = 'micro'))
+print(cvs)
+print("Mean F1 Micro Score: {}".format(np.mean(cvs)))
+
+# [0.74029662 0.73653108 0.74155794 0.73915963 0.74044513]
+# Mean F1 Micro Score: 0.7395980802125192
+
+#%%
+
+pipe.fit(final_train, train_labels.damage_grade)
+
 #%%
 test = pd.read_csv('test_values.csv')
 mtest = test.drop(drop_vars, axis = 1)
 mtest = targ_enc.transform(mtest)
 mtest = pd.DataFrame(imp.transform(mtest), columns = mtest.columns)
 
-test["damage_grade"] = gbc.predict(mtest)
+test["damage_grade"] = pipe.predict(mtest)
 print(test.value_counts('damage_grade')) # check that preds look ok
 
 #%%
-test[['building_id', 'damage_grade']].to_csv("gbc_rf_init_1000_est_lr_point25.csv", index = False)
+test[['building_id', 'damage_grade']].to_csv("best_model_smote.csv", index = False)
